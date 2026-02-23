@@ -1,0 +1,42 @@
+{
+  "name": "crmomniia02",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.39.8",
+    "framer-motion": "^12.29.0",
+    "lucide-react": "0.344.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.23.1",
+    "recharts": "2.12.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.0",
+    "@types/eslint": "^9.6.1",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^17.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.8.2",
+    "typescript-eslint": "^8.53.1",
+    "vite": "^6.2.0"
+  }
+}
