@@ -45,12 +45,8 @@ const Register: React.FC = () => {
         setSuccess(true);
         setTimeout(() => navigate('/login'), 3000);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Erro ao criar conta. Tente novamente.');
-      } else {
-        setError('Erro desconhecido ao criar conta.');
-      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar conta. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

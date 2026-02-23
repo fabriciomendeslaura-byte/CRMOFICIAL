@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCRM } from '../contexts/CRMContext';
 import { Card, Button } from '../components/UIComponents';
-import { Mail, Briefcase, ShieldCheck, Star, Zap, Image as ImageIcon, Check } from 'lucide-react';
+import { UserCircle, Mail, Briefcase, ShieldCheck, Star, Zap, Image as ImageIcon, Check } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 
 const Profile: React.FC = () => {
@@ -17,7 +17,7 @@ const Profile: React.FC = () => {
       await updateUser({ ...currentUser, avatarUrl: newAvatar });
       setEditing(false);
       addToast({ title: 'Perfil atualizado', type: 'success' });
-    } catch {
+    } catch (err) {
       addToast({ title: 'Erro ao atualizar', type: 'error' });
     }
   };

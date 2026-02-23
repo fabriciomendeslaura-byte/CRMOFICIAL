@@ -82,7 +82,7 @@ export interface ToastMessage {
   id: string;
   title: string;
   description?: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: 'success' | 'error' | 'info';
 }
 
 export interface ChatMessage {

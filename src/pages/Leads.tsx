@@ -16,30 +16,6 @@ const Leads: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  /* Handlers definition first to avoid hoisting issues */
-  const openCreate = React.useCallback(() => {
-    setEditingLead({
-      source: LeadSource.FORMULARIO,
-      stage: PipelineStage.NOVO,
-      ownerId: currentUser.role === 'vendedor' ? currentUser.id : undefined,
-      automationEnabled: false,
-      insights: '',
-      lastInsightDate: new Date().toISOString()
-    });
-    setIsFormOpen(true);
-  }, [currentUser]);
-
-  const openEdit = (lead: Lead) => {
-    setEditingLead({ ...lead });
-    setIsFormOpen(true);
-  };
-
-  const openDetail = (lead: Lead) => {
-    setSelectedLead(lead);
-    setIsDetailOpen(true);
-  };
-
-  /* Effect using handlers */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -54,13 +30,35 @@ const Leads: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openCreate]);
+  }, []);
 
   const filteredLeads = leads.filter(l => {
     return l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       l.email.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const openCreate = () => {
+    setEditingLead({
+      source: LeadSource.FORMULARIO,
+      stage: PipelineStage.NOVO,
+      ownerId: currentUser.role === 'vendedor' ? currentUser.id : undefined,
+      automationEnabled: false,
+      insights: '',
+      lastInsightDate: new Date().toISOString()
+    });
+    setIsFormOpen(true);
+  };
+
+  const openEdit = (lead: Lead) => {
+    setEditingLead({ ...lead });
+    setIsFormOpen(true);
+  };
+
+  const openDetail = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsDetailOpen(true);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

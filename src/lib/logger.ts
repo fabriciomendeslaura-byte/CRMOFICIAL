@@ -63,7 +63,7 @@ class Logger {
         }
     }
 
-    private sendToLoggingService(_entry: LogEntry): void {
+    private sendToLoggingService(entry: LogEntry): void {
         // Placeholder for sending logs to an external service like Sentry, LogRocket, etc.
         // Example:
         // fetch('/api/logs', { method: 'POST', body: JSON.stringify(entry) });

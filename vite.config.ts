@@ -4,6 +4,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  // Validate required env vars at build time
+  const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+  if (mode === 'production') {
+    requiredVars.forEach(key => {
+      if (!env[key]) {
+        throw new Error(`Missing required environment variable: ${key}`);
+      }
+    });
+  }
   return {
     server: {
       port: 3000,
@@ -11,22 +20,19 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     build: {
-      target: 'esnext',
-      minify: 'esbuild',
+      sourcemap: false, // Never expose source maps in production
       rollupOptions: {
         output: {
           manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-ui': ['lucide-react', 'framer-motion', 'recharts'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-          },
-        },
-      },
-      chunkSizeWarningLimit: 1000,
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            charts: ['recharts'],
+          }
+        }
+      }
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(__dirname, '.'),
       }
     }
   };

@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useCRM } from '../contexts/CRMContext';
-import { X, Send, Bot, User, Sparkles } from 'lucide-react';
+import { ChatMessage } from '../pages/types';
+import { BrainCircuit, X, Send, Bot, User, Sparkles } from 'lucide-react';
 
 const AICompanion: React.FC = () => {
-    const { chatWithAI, currentUser, chatHistory, isLoadingChat, addMessage } = useCRM();
+    const { chatWithAI, currentUser, leads, chatHistory, isLoadingChat, addMessage } = useCRM();
     const [isOpen, setIsOpen] = useState(false);
 
     const [input, setInput] = useState('');
@@ -101,7 +102,7 @@ const AICompanion: React.FC = () => {
                         {hasUnread && chatHistory.length > 0 && (
                             <div className="absolute bottom-full right-0 mb-3 w-48 bg-white dark:bg-zinc-900 p-3 rounded-2xl rounded-br-none shadow-xl border border-indigo-100 dark:border-zinc-700 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <p className="text-[10px] text-zinc-500 font-bold uppercase mb-1">Omni-Bot diz:</p>
-                                <p className="text-xs text-zinc-800 dark:text-zinc-200 line-clamp-4 leading-relaxed">
+                                <p className="text-xs text-zinc-800 dark:text-zinc-200 line-clamp-2 leading-relaxed">
                                     {chatHistory[chatHistory.length - 1].content}
                                 </p>
                             </div>

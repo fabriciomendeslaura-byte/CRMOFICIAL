@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Lead, PipelineStageLabels } from '../pages/types';
+import { Lead, PipelineStage, PipelineStageLabels } from '../pages/types';
 import { motion } from 'framer-motion';
-import { FileText, Lightbulb, Star, UserPlus } from 'lucide-react';
+import { Calendar, CheckCircle2, FileText, Lightbulb, Star, UserPlus } from 'lucide-react';
 
 interface LeadActivityTimelineProps {
     lead: Lead;

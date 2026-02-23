@@ -7,20 +7,13 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, TrendingUp, Trophy, DollarSign, Activity, ArrowUpRight } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
-interface ChartPayload {
-  name: string;
-  value: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: ChartPayload; name: string; value: number }[]; label?: string }) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-xl shadow-xl">
         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">{label}</p>
         <div className="space-y-1">
-          {payload.map((entry, index) => (
+          {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-4">
               <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{entry.name}</span>
               <span className="text-sm font-bold text-zinc-900 dark:text-white">{entry.value}</span>
@@ -41,7 +34,7 @@ const Dashboard: React.FC = () => {
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
     return leads;
-  }, [leads]);
+  }, [leads, period]);
 
   const chartData = useMemo(() => {
     if (!filteredLeads.length) return [];

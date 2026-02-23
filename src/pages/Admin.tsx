@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useCRM } from '../contexts/CRMContext';
 import { Card, Button, Input, Modal, Select } from '../components/UIComponents';
-import { User, Role } from './types';
-import { Edit2, Shield, AlertTriangle } from 'lucide-react';
+import { User } from './types';
+import { Edit2, Shield, AlertTriangle, UserCheck } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 const Admin: React.FC = () => {
@@ -108,7 +108,7 @@ const Admin: React.FC = () => {
 
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-zinc-500">Nível de Acesso</label>
-                        <Select value={editingUser?.role || 'vendedor'} onChange={e => setEditingUser(p => ({ ...p, role: e.target.value as Role }))}>
+                        <Select value={editingUser?.role || 'vendedor'} onChange={e => setEditingUser(p => ({ ...p, role: e.target.value as any }))}>
                             <option value="vendedor">Vendedor</option>
                             <option value="admin">Administrador</option>
                         </Select>

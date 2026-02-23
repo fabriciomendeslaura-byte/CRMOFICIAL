@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Lead, User, PipelineStage, Role, CalendarEvent, ChatMessage } from '../pages/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -44,8 +43,7 @@ const CRMContext = createContext<CRMContextType | undefined>(undefined);
 // Default admin user for preview/demo mode
 const DEFAULT_ADMIN: User = {
     id: 1,
-    // SECURITY: ensuring mock data never loads in production
-    authUserId: import.meta.env.DEV ? 'admin-preview' : null,
+    authUserId: 'admin-preview',
     name: 'Administrador Omni',
     email: 'admin@omni.ia',
     role: 'admin' as Role,
@@ -63,8 +61,6 @@ export const useCRM = () => {
 
 export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addToast } = useToast();
-
-    // --- STATE ---
     const [users, setUsers] = useState<User[]>(MOCK_USERS);
     const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
     const [meetings, setMeetings] = useState<CalendarEvent[]>([]);
@@ -73,83 +69,10 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [hasNewInsights, setHasNewInsights] = useState<boolean>(false);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isLoadingChat, setIsLoadingChat] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-    const [isUsingMockData, setIsUsingMockData] = useState(!isSupabaseConfigured());
 
-    // Notification system state
+    // Ref to track if it's the initial load of history
     const notifiedEventsRef = React.useRef<Set<string>>(new Set());
 
-    // --- MAPPERS (Pure/Stable Logic) ---
-    const mapLeadFromDB = useCallback((data: Record<string, unknown>): Lead => ({
-        id: String(data.id),
-        name: (data.nome as string) || 'Sem nome',
-        company: (data.empresa as string) || '',
-        email: (data.email as string) || '',
-        phone: (data.telefone as string) || '',
-        source: data.origem as Lead['source'],
-        value: Number(data.valor) || 0,
-        createdAt: (data.data_criacao as string) || (data.created_at as string) || new Date().toISOString(),
-        stage: data.etapa_pipeline as PipelineStage,
-        ownerId: data.responsavel_id as number,
-        notes: (data.observacoes as string) || '',
-        companyId: data.company_id as number,
-        insights: (data.insights as string) || '',
-        automationEnabled: (data.automation_enabled as boolean) || false,
-        lastInsightDate: (data.last_insight_date as string) || null
-    }), []);
-
-    const mapUserFromDB = useCallback((data: Record<string, unknown>, authEmail?: string): User => ({
-        id: data.id as number,
-        authUserId: data.auth_user_id as string,
-        name: data.nome as string,
-        email: authEmail || (data.email as string),
-        role: data.papel as Role,
-        companyId: data.company_id as number,
-        isActive: data.is_active as boolean,
-        avatarUrl: data.avatar_url as string | undefined
-    }), []);
-
-    const mapLeadToDB = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => ({
-        nome: lead.name,
-        empresa: lead.company,
-        email: lead.email,
-        telefone: lead.phone,
-        origem: lead.source,
-        valor: lead.value,
-        etapa_pipeline: lead.stage,
-        responsavel_id: lead.ownerId,
-        observacoes: lead.notes,
-        insights: lead.insights,
-        automation_enabled: lead.automationEnabled,
-        company_id: currentUser?.companyId || 1
-    }), [currentUser]);
-
-    const mapMeetingFromDB = useCallback((data: Record<string, unknown>): CalendarEvent => ({
-        id: String(data.id),
-        summary: (data.summary as string) || 'Sem título',
-        description: (data.description as string) || '',
-        location: (data.location as string) || '',
-        start: { dateTime: (data.start_time as string) },
-        end: { dateTime: (data.end_time as string) },
-        leadId: data.lead_id ? String(data.lead_id) : undefined,
-        meeting_link: (data.meeting_link as string) || '',
-        userId: data.user_id as number
-    }), []);
-
-    const mapMeetingToDB = useCallback((m: Omit<CalendarEvent, 'id'>) => ({
-        summary: m.summary,
-        description: m.description,
-        location: m.location,
-        start_time: m.start.dateTime,
-        end_time: m.end.dateTime,
-        lead_id: m.leadId ? Number(m.leadId) : null,
-        company_id: currentUser?.companyId || 1,
-        meeting_link: m.meeting_link,
-        user_id: m.userId || currentUser?.id
-    }), [currentUser]);
-
-    // --- CHAT & NOTIFICATION HELPERS ---
     const saveChatMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
         const newMessage: ChatMessage = {
             id: crypto.randomUUID(),
@@ -170,7 +93,547 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [currentUser]);
 
-    const loadChatHistory = useCallback(async () => {
+    // Polling for meeting reminders (Every 1 minute)
+    useEffect(() => {
+        const checkMeetings = () => {
+            const now = new Date();
+            meetings.forEach(meeting => {
+                const meetingTime = new Date(meeting.start.dateTime);
+                const timeDiff = meetingTime.getTime() - now.getTime();
+                const minutesUntil = timeDiff / 1000 / 60;
+
+                // Notify if meeting is between 29.5 and 30.5 minutes away
+                if (minutesUntil >= 29.5 && minutesUntil <= 30.5 && !notifiedEventsRef.current.has(meeting.id)) {
+                    // 1. Classic Toast Notification
+                    addToast({
+                        title: `🤖 Omni-Bot: Reunião "${meeting.summary}" em 30min!`,
+                        type: 'info'
+                    });
+
+                    // 2. Proactive AI Message
+                    saveChatMessage('assistant', `🤖 **OMNI-ADVISOR:** Olá! Passando para te lembrar da reunião **"${meeting.summary}"** que começa em 30 minutos. Já conferiu a pauta? Boa sorte! 🚀`);
+
+                    notifiedEventsRef.current.add(meeting.id);
+                }
+            });
+        };
+
+        // Check immediately and then every 60s
+        checkMeetings();
+        const interval = setInterval(checkMeetings, 60000);
+        return () => clearInterval(interval);
+    }, [meetings, addToast, saveChatMessage]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [isUsingMockData, setIsUsingMockData] = useState(!isSupabaseConfigured());
+
+    // --- Network status listeners ---
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    // --- Mappers ---
+    const mapLeadFromDB = (data: Record<string, unknown>): Lead => ({
+        id: String(data.id),
+        name: (data.nome as string) || 'Sem nome',
+        company: (data.empresa as string) || '',
+        email: (data.email as string) || '',
+        phone: (data.telefone as string) || '',
+        source: data.origem as Lead['source'],
+        value: Number(data.valor) || 0,
+        createdAt: (data.data_criacao as string) || (data.created_at as string) || new Date().toISOString(),
+        stage: data.etapa_pipeline as PipelineStage,
+        ownerId: data.responsavel_id as number,
+        notes: (data.observacoes as string) || '',
+        companyId: data.company_id as number,
+        insights: (data.insights as string) || '',
+        automationEnabled: (data.automation_enabled as boolean) || false,
+        lastInsightDate: (data.last_insight_date as string) || null
+    });
+
+    const mapUserFromDB = (data: Record<string, unknown>, authEmail?: string): User => ({
+        id: data.id as number,
+        authUserId: data.auth_user_id as string,
+        name: data.nome as string,
+        email: authEmail || (data.email as string),
+        role: data.papel as Role,
+        companyId: data.company_id as number,
+        isActive: data.is_active as boolean,
+        avatarUrl: data.avatar_url as string | undefined
+    });
+
+    const mapLeadToDB = (lead: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => ({
+        nome: lead.name,
+        empresa: lead.company,
+        email: lead.email,
+        telefone: lead.phone,
+        origem: lead.source,
+        valor: lead.value,
+        etapa_pipeline: lead.stage,
+        responsavel_id: lead.ownerId,
+        observacoes: lead.notes,
+        insights: lead.insights,
+        automation_enabled: lead.automationEnabled,
+        company_id: currentUser?.companyId || 1 // Dynamic company
+    });
+
+    const mapMeetingFromDB = (data: Record<string, unknown>): CalendarEvent => ({
+        id: String(data.id),
+        summary: (data.summary as string) || 'Sem título',
+        description: (data.description as string) || '',
+        location: (data.location as string) || '',
+        start: { dateTime: (data.start_time as string) },
+        end: { dateTime: (data.end_time as string) },
+        leadId: data.lead_id ? String(data.lead_id) : undefined,
+        meeting_link: (data.meeting_link as string) || '',
+        userId: data.user_id as number
+    });
+
+    const mapMeetingToDB = (m: Omit<CalendarEvent, 'id'>) => ({
+        summary: m.summary,
+        description: m.description,
+        location: m.location,
+        start_time: m.start.dateTime,
+        end_time: m.end.dateTime,
+        lead_id: m.leadId ? Number(m.leadId) : null,
+        company_id: currentUser?.companyId || 1,
+        meeting_link: m.meeting_link,
+        user_id: m.userId || currentUser?.id
+    });
+
+    // --- Auth Functions ---
+    const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+        setIsLoading(true);
+        try {
+            if (!isSupabaseConfigured()) {
+                logger.info('Using mock auth - Supabase not configured');
+                await new Promise(r => setTimeout(r, 500));
+                setCurrentUser(DEFAULT_ADMIN);
+                setIsLoading(false);
+                return { success: true };
+            }
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                logger.warn('Sign in failed', { email, error: error.message });
+                setIsLoading(false);
+                return { success: false, error: error.message };
+            }
+
+            if (data.user) {
+                // Fetch the user profile from crm_users
+                const { data: userData, error: userError } = await supabase
+                    .from('crm_users')
+                    .select('*')
+                    .eq('auth_user_id', data.user.id)
+                    .single();
+
+                if (userError || !userData) {
+                    logger.error('Access denied - User profile not found', userError as unknown as Error);
+                    await supabase.auth.signOut();
+                    setIsLoading(false);
+                    return { success: false, error: 'Acesso negado: Usuário não cadastrado no CRM.' };
+                }
+
+                if (!userData.is_active) {
+                    await supabase.auth.signOut();
+                    setIsLoading(false);
+                    return { success: false, error: 'Acesso negado: Sua conta está inativa.' };
+                }
+
+                setCurrentUser(mapUserFromDB(userData, data.user.email));
+            }
+
+            setIsLoading(false);
+            return { success: true };
+        } catch (e) {
+            const error = e as Error;
+            logger.error('Unexpected error during sign in', error);
+            setIsLoading(false);
+            return { success: false, error: 'Erro inesperado ao fazer login.' };
+        }
+    };
+
+    const signOut = async () => {
+        setIsLoading(true);
+        try {
+            if (isSupabaseConfigured()) {
+                await supabase.auth.signOut();
+            }
+            setCurrentUser(null);
+            addToast({ title: 'Logout realizado', description: 'Você foi desconectado com sucesso.', type: 'success' });
+        } catch (e) {
+            logger.error('Error during sign out', e as Error);
+            addToast({ title: 'Erro ao sair', type: 'error' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // --- Data Fetching ---
+    const fetchData = useCallback(async () => {
+        if (!isOnline) {
+            logger.info('Offline - using cached/mock data');
+            return;
+        }
+
+        if (!isSupabaseConfigured()) {
+            logger.info('Supabase not configured - using mock data');
+            setIsUsingMockData(true);
+            setIsLoading(false);
+            // In mock mode, auto-login as admin
+            if (!currentUser) setCurrentUser(DEFAULT_ADMIN);
+            return;
+        }
+
+        try {
+            if (!currentUser) return;
+
+            setIsUsingMockData(false);
+            const isAdmin = currentUser.role === 'admin';
+            const companyId = currentUser.companyId;
+
+            // Filter queries based on company and ownership
+            let usersQuery = supabase.from('crm_users').select('*').eq('company_id', companyId);
+
+            let leadsQuery = supabase.from('crm_leads').select('*').eq('company_id', companyId);
+            if (!isAdmin) {
+                leadsQuery = leadsQuery.eq('responsavel_id', currentUser.id);
+            }
+            leadsQuery = leadsQuery.order('data_criacao', { ascending: false });
+
+            let meetingsQuery = supabase.from('crm_meetings').select('*').eq('company_id', companyId);
+            if (!isAdmin) {
+                meetingsQuery = meetingsQuery.eq('user_id', currentUser.id);
+            }
+            meetingsQuery = meetingsQuery.order('start_time', { ascending: true });
+
+            const [usersResult, leadsResult, meetingsResult, companyResult] = await Promise.allSettled([
+                usersQuery,
+                leadsQuery,
+                meetingsQuery,
+                supabase.from('crm_companies').select('insights_e_melhorias').eq('id', companyId).maybeSingle()
+            ]);
+
+            if (usersResult.status === 'fulfilled' && usersResult.value.data) {
+                setUsers(usersResult.value.data.map(u => mapUserFromDB(u)));
+            }
+
+            if (leadsResult.status === 'fulfilled' && leadsResult.value.data) {
+                setLeads(leadsResult.value.data.map(mapLeadFromDB));
+            }
+
+            if (meetingsResult.status === 'fulfilled' && meetingsResult.value.data) {
+                setMeetings(meetingsResult.value.data.map(mapMeetingFromDB));
+            }
+
+            if (companyResult.status === 'fulfilled' && companyResult.value.data) {
+                const insights = companyResult.value.data.insights_e_melhorias;
+                if (insights && insights !== companyInsights) {
+                    setCompanyInsights(insights);
+                    setHasNewInsights(true);
+                }
+            }
+
+            logger.debug('Data fetched successfully from Supabase');
+        } catch (e) {
+            logger.error('Error fetching data from Supabase', e as Error);
+            setIsUsingMockData(true);
+            addToast({ title: 'Usando dados de demonstração', description: 'Não foi possível conectar ao banco de dados.', type: 'info' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isOnline, companyInsights, addToast, currentUser]);
+
+    const refreshData = useCallback(async () => {
+        setIsLoading(true);
+        await fetchData();
+    }, [fetchData]);
+
+    // Check auth session on mount
+    useEffect(() => {
+        const initializeAuth = async () => {
+            if (!isSupabaseConfigured()) {
+                setCurrentUser(DEFAULT_ADMIN);
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+                if (sessionError) {
+                    logger.error('Session error', sessionError as unknown as Error);
+                    setIsLoading(false);
+                    return;
+                }
+
+                if (session?.user) {
+                    const { data: userData, error: userError } = await supabase
+                        .from('crm_users')
+                        .select('*')
+                        .eq('auth_user_id', session.user.id)
+                        .single();
+
+                    if (userError || !userData) {
+                        logger.warn('User profile not found or error', { message: userError?.message });
+                        await supabase.auth.signOut();
+                        setCurrentUser(null);
+                    } else if (userData) {
+                        if (!userData.is_active) {
+                            await supabase.auth.signOut();
+                            setCurrentUser(null);
+                        } else {
+                            setCurrentUser(mapUserFromDB(userData, session.user.email));
+                        }
+                    }
+                }
+            } catch (err) {
+                logger.error('Unexpected auth initialization error', err as Error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeAuth();
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchData();
+        }
+    }, [currentUser, fetchData]);
+
+    // --- CRUD Actions ---
+    const updateCompanyInsights = async (text: string) => {
+        setCompanyInsights(text);
+        addToast({ title: 'Insights atualizados', type: 'success' });
+
+        if (isSupabaseConfigured() && currentUser) {
+            const { error } = await supabase.from('crm_companies').update({ insights_e_melhorias: text }).eq('id', currentUser.companyId);
+            if (error) logger.error('Failed to update company insights', error as unknown as Error);
+        }
+    };
+
+    const markInsightsAsRead = () => setHasNewInsights(false);
+
+    const updateUser = async (u: User) => {
+        setUsers(prev => prev.map(item => item.id === u.id ? u : item));
+        addToast({ title: 'Usuário atualizado', type: 'success' });
+
+        if (isSupabaseConfigured()) {
+            const { error } = await supabase.from('crm_users').update({ nome: u.name, papel: u.role }).eq('id', u.id);
+            if (error) logger.error('Failed to update user', error as unknown as Error);
+        }
+    };
+
+    const addLead = async (l: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => {
+        const newId = crypto.randomUUID();
+        const newLead: Lead = {
+            ...l,
+            id: newId,
+            createdAt: new Date().toISOString(),
+            companyId: currentUser?.companyId || 1
+        };
+
+        setLeads(prev => [newLead, ...prev]);
+
+        if (isSupabaseConfigured()) {
+            const { error } = await supabase.from('crm_leads').insert(mapLeadToDB(l));
+            if (error) {
+                logger.error('Failed to add lead', error as unknown as Error);
+                addToast({ title: 'Lead criado localmente', description: 'Erro ao sincronizar com o banco.', type: 'info' });
+                return;
+            }
+        }
+
+        addToast({ title: 'Lead Criado', type: 'success' });
+    };
+
+    const updateLead = async (l: Lead) => {
+        setLeads(prev => prev.map(item => item.id === l.id ? l : item));
+
+        if (isSupabaseConfigured()) {
+            const companyId = currentUser?.companyId;
+            const { error } = await supabase.from('crm_leads').update({
+                nome: l.name,
+                empresa: l.company,
+                email: l.email,
+                telefone: l.phone,
+                origem: l.source,
+                valor: l.value,
+                etapa_pipeline: l.stage,
+                responsavel_id: l.ownerId,
+                observacoes: l.notes,
+                insights: l.insights,
+                automation_enabled: l.automationEnabled
+            }).eq('id', l.id).eq('company_id', companyId!);
+
+            if (error) {
+                logger.error('Failed to update lead', error as unknown as Error);
+                addToast({ title: 'Lead atualizado localmente', description: 'Erro ao sincronizar.', type: 'info' });
+                return;
+            }
+        }
+
+        addToast({ title: 'Lead Salvo', type: 'success' });
+    };
+
+    const deleteLead = async (id: string) => {
+        setLeads(prev => prev.filter(l => l.id !== id));
+
+        if (isSupabaseConfigured()) {
+            const companyId = currentUser?.companyId;
+            const { error } = await supabase.from('crm_leads').delete().eq('id', id).eq('company_id', companyId!);
+            if (error) {
+                logger.error('Failed to delete lead', error as unknown as Error);
+            }
+        }
+
+        addToast({ title: 'Lead Removido', type: 'success' });
+    };
+
+    const moveLeadStage = async (id: string, stage: PipelineStage) => {
+        setLeads(prev => prev.map(l => l.id === id ? { ...l, stage } : l));
+
+        if (isSupabaseConfigured()) {
+            const companyId = currentUser?.companyId;
+            const { error } = await supabase.from('crm_leads').update({ etapa_pipeline: stage }).eq('id', id).eq('company_id', companyId!);
+            if (error) logger.error('Failed to update lead stage', error as unknown as Error);
+        }
+    };
+
+    const sanitizeCSVField = (value: string | number): string => {
+        const str = String(value ?? '').replace(/"/g, '""');
+        // CSV Injection guard: prefix dangerous chars with a tab
+        return /^[=+\-@\t\r]/.test(str) ? `\t${str}` : str;
+    };
+
+    const exportCSV = (filtered: Lead[]) => {
+        const headers = 'Nome,Empresa,Email,Telefone,Valor,Origem,Status\n';
+        const rows = filtered.map(l =>
+            `"${sanitizeCSVField(l.name)}","${sanitizeCSVField(l.company)}","${sanitizeCSVField(l.email)}","${sanitizeCSVField(l.phone)}","${sanitizeCSVField(l.value)}","${sanitizeCSVField(l.source)}","${sanitizeCSVField(l.stage)}"`
+        ).join('\n');
+        const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `leads_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+
+    const addMeeting = async (m: Omit<CalendarEvent, 'id'>) => {
+        if (isSupabaseConfigured()) {
+            const { data, error } = await supabase.from('crm_meetings').insert(mapMeetingToDB(m)).select().single();
+            if (error) {
+                logger.error('Failed to add meeting', error as unknown as Error);
+                addToast({ title: 'Erro ao agendar no servidor', type: 'error' });
+                return;
+            }
+            if (data) setMeetings(prev => [...prev, mapMeetingFromDB(data)]);
+        } else {
+            const newMeeting = { ...m, id: crypto.randomUUID() };
+            setMeetings(prev => [...prev, newMeeting as CalendarEvent]);
+        }
+        addToast({ title: 'Agendamento Confirmado', type: 'success' });
+    };
+
+    const deleteMeeting = async (id: string) => {
+        if (isSupabaseConfigured()) {
+            const companyId = currentUser?.companyId;
+            const { error } = await supabase.from('crm_meetings').delete().eq('id', id).eq('company_id', companyId!);
+            if (error) {
+                logger.error('Failed to delete meeting', error as unknown as Error);
+                return;
+            }
+        }
+        setMeetings(prev => prev.filter(m => m.id !== id));
+        addToast({ title: 'Agendamento Removido', type: 'success' });
+    };
+
+    const updateMeeting = async (m: CalendarEvent) => {
+        setMeetings(prev => prev.map(item => item.id === m.id ? m : item));
+
+        if (isSupabaseConfigured()) {
+            const companyId = currentUser?.companyId;
+            const { error } = await supabase.from('crm_meetings').update({
+                summary: m.summary,
+                description: m.description,
+                location: m.location,
+                start_time: m.start.dateTime,
+                end_time: m.end.dateTime,
+                lead_id: m.leadId ? Number(m.leadId) : null,
+                meeting_link: m.meeting_link
+            }).eq('id', m.id).eq('company_id', companyId!);
+
+            if (error) {
+                logger.error('Failed to update meeting', error as unknown as Error);
+                addToast({ title: 'Erro ao atualizar no servidor', type: 'error' });
+                return;
+            }
+        }
+        addToast({ title: 'Agendamento Atualizado', type: 'success' });
+    };
+
+    const generateLeadStrategy = async (leadId: string): Promise<string> => {
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead) return 'Lead não encontrado.';
+
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) return 'Chave da OpenAI não configurada (VITE_OPENAI_API_KEY).';
+
+        try {
+            const prompt = `Consultor de Vendas CRM OMNI.IA.
+Analise: ${lead.name} (${lead.company}), R$ ${lead.value}, Etapa ${lead.stage}, Notas: ${lead.notes}.
+Gere JSON curto:
+{ "abordagem": "1 frase direta", "objecoes": "2 pontos curtos", "script_whatsapp": "Texto curto para enviar agora" }`;
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o-mini',
+                    messages: [{ role: 'system', content: prompt }],
+                    max_tokens: 300
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+
+            const content = JSON.parse(data.choices[0].message.content.replace(/```json|```/g, ''));
+            const strategy = `### 🎯 Estratégia Rápida: ${lead.name}
+
+**Abordagem:** ${content.abordagem}
+
+**Objeções:**
+${content.objecoes}
+
+**Zap:** "${content.script_whatsapp}"`;
+
+            const updatedLead = { ...lead, insights: strategy, lastInsightDate: new Date().toISOString() };
+            await updateLead(updatedLead);
+
+            return strategy;
+        } catch (error) {
+            logger.error("OpenAI Error", error as Error);
+            return "Estratégia: Foque no ROI e tente agendar uma call rápida. (Erro na formatação da IA)";
+        }
+    };
+
+    const loadChatHistory = async () => {
         if (!currentUser || !isSupabaseConfigured()) return;
         setIsLoadingChat(true);
         try {
@@ -182,6 +645,7 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 .limit(50);
 
             if (error) throw error;
+
             if (data) {
                 setChatHistory(data.map(msg => ({
                     id: msg.id,
@@ -195,329 +659,85 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } finally {
             setIsLoadingChat(false);
         }
-    }, [currentUser]);
+    };
 
-    const clearChatHistory = useCallback(() => {
+
+    const clearChatHistory = async () => {
         setChatHistory([]);
-    }, []);
+        // Optional: Delete from DB logic if needed
+    };
 
-    const sendNewMeetingNotification = useCallback(async (meeting: CalendarEvent) => {
-        if (notifiedEventsRef.current.has(`new-${meeting.id}`)) return;
-
-        const meetingTime = new Date(meeting.start.dateTime).toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-        const firstName = currentUser?.name?.split(' ')[0] || 'Vendedor';
-
-        await saveChatMessage('assistant', `🚀 Ótimo, ${firstName}! Acabei de confirmar a reunião com **${meeting.summary}** para ${meetingTime}. \n\nDica: Quer que eu prepare um roteiro rápido para essa conversa?`);
-
-        notifiedEventsRef.current.add(`new-${meeting.id}`);
-    }, [currentUser, saveChatMessage]);
-
-    // --- AI & STRATEGY ---
     const chatWithAI = async (message: string): Promise<string> => {
-        if (!isSupabaseConfigured()) return 'Supabase não configurado.';
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) return 'Chave da OpenAI não configurada.';
 
+        // Save user message
         await saveChatMessage('user', message);
-        setIsLoadingChat(true);
 
-        const now = new Date();
-        const currentDateTime = now.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
-        const queryLower = message.toLowerCase();
+        // Context Construction
+        const leadContext = leads.map(l => ({
+            nome: l.name,
+            empresa: l.company,
+            valor: l.value,
+            etapa: l.stage
+        })).slice(0, 10); // Increased context slightly
 
-        const isMentioned = (text: string) => {
-            if (!text) return false;
-            const parts = text.toLowerCase().split(' ').filter(p => p.length > 2);
-            return parts.some(part => queryLower.includes(part));
-        };
+        const meetingsContext = meetings.map(m => ({
+            titulo: m.summary,
+            inicio: new Date(m.start.dateTime).toLocaleString('pt-BR'),
+            cliente: m.leadId ? leads.find(l => l.id === m.leadId)?.name : 'N/A'
+        }));
 
-        const mentionedLeads = leads.filter(l => isMentioned(l.name) || isMentioned(l.company));
-        let strategicContext = "";
+        const systemPrompt = `Bot: Omni-Bot. Usuário: ${currentUser?.name || 'Vendedor'}.
+Contexto: Teu histórico de conversa anterior é crucial. Use-o para ser caloroso.
+Dados de Leads: ${JSON.stringify(leadContext)}...
+Dados da Agenda: ${JSON.stringify(meetingsContext)}...
 
-        if (mentionedLeads.length > 0) {
-            strategicContext = `🎯 **LEADS ENCONTRADOS NA BUSCA:**\n${JSON.stringify(mentionedLeads.map(l => ({
-                Nome: l.name, Empresa: l.company, Valor: `R$ ${l.value}`, Etapa: l.stage, Notas: l.notes
-            })), null, 2)}`;
-        } else {
-            const top5 = leads.slice(0, 5).map(l => ({ n: l.name, v: l.value, s: l.stage }));
-            const totalValue = leads.reduce((acc, l) => acc + l.value, 0);
-            strategicContext = `📊 **VISÃO GERAL DO PIPELINE:**\n- Total de Leads: ${leads.length}\n- Valor em Aberto: R$ ${totalValue}\n- Top 5 Recentes: ${JSON.stringify(top5)}`;
-        }
-
-        const relevantMeetings = meetings.filter(m =>
-            queryLower.includes(m.summary.toLowerCase()) ||
-            (m.leadId && isMentioned(leads.find(l => l.id === m.leadId)?.name || ''))
-        );
-
-        let agendaContext = "";
-        if (relevantMeetings.length > 0) {
-            agendaContext = `📅 **REUNIÕES ENCONTRADAS:**\n${JSON.stringify(relevantMeetings.map(m => ({ Titulo: m.summary, Data: new Date(m.start.dateTime).toLocaleString('pt-BR'), Desc: m.description })))}`;
-        } else {
-            const upcoming = meetings.filter(m => new Date(m.start.dateTime) >= now).slice(0, 5).map(m => ({ t: m.summary, d: new Date(m.start.dateTime).toLocaleDateString() }));
-            agendaContext = `📅 **PRÓXIMAS REUNIÕES:** ${JSON.stringify(upcoming)}`;
-        }
+Diretrizes:
+1. Seja EXTREMAMENTE educado, gentil e humano.
+2. Use o nome do usuário para criar conexão.
+3. Responda de forma concisa, mas com "calor humano".
+4. Use emojis amigáveis (😊, 🚀, 💡, 📅).
+5. Se perguntado sobre a agenda, liste as reuniões de forma clara.
+6. Monitore as oportunidades e sugira ações.`;
 
         try {
-            const { data, error } = await supabase.functions.invoke('ai-advisor', {
-                body: {
-                    action: 'chat',
-                    payload: {
-                        context: `${strategicContext} | ${agendaContext}`,
-                        message,
-                        history: chatHistory.slice(-6),
-                        userName: currentUser?.name?.split(' ')[0] || 'Vendedor'
-                    }
-                }
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o-mini',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...chatHistory.map(m => ({ role: m.role, content: m.content })).slice(-10), // Context window
+                        { role: 'user', content: message }
+                    ],
+                    max_tokens: 150
+                })
             });
 
-            if (error) throw error;
-            const reply = data.reply;
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+
+            const reply = data.choices[0].message.content;
             await saveChatMessage('assistant', reply);
             return reply;
         } catch (error) {
-            logger.error("AI Error", error as Error);
-            const errReply = "Erro ao conectar à IA via Edge Function.";
-            await saveChatMessage('assistant', errReply);
-            return errReply;
-        } finally {
-            setIsLoadingChat(false);
+            logger.error("OpenAI Chat Error", error as Error);
+            const errorMsg = "Estou com dificuldades para conectar ao cérebro agora.";
+            await saveChatMessage('assistant', errorMsg);
+            return errorMsg;
         }
     };
 
-    const generateLeadStrategy = async (leadId: string): Promise<string> => {
-        const lead = leads.find(l => l.id === leadId);
-        if (!lead) return 'Lead não encontrado.';
-        if (!isSupabaseConfigured()) return 'Supabase não configurado.';
-
-        try {
-            const { data, error } = await supabase.functions.invoke('ai-advisor', {
-                body: {
-                    action: 'strategy',
-                    payload: {
-                        leadName: lead.name,
-                        company: lead.company,
-                        value: lead.value,
-                        notes: lead.notes
-                    }
-                }
-            });
-
-            if (error) throw error;
-            return data.reply;
-        } catch (error) {
-            logger.error("Strategy Error", error as Error);
-            return "Falha ao gerar estratégia via Edge Function.";
-        }
-    };
-
-    // --- DATA MANAGEMENT ---
-    const fetchData = useCallback(async () => {
-        if (!isOnline || !isSupabaseConfigured() || !currentUser) {
-            if (!isSupabaseConfigured()) {
-                setIsUsingMockData(true);
-                setIsLoading(false);
-                if (!currentUser) setCurrentUser(DEFAULT_ADMIN);
-            }
-            return;
-        }
-
-        try {
-            setIsUsingMockData(false);
-            const companyId = currentUser.companyId;
-            const isAdmin = currentUser.role === 'admin';
-
-            const [usersRes, leadsRes, meetingsRes, companyRes] = await Promise.all([
-                supabase.from('crm_users').select('*').eq('company_id', companyId),
-                isAdmin ? supabase.from('crm_leads').select('*').eq('company_id', companyId) : supabase.from('crm_leads').select('*').eq('responsavel_id', currentUser.id),
-                isAdmin ? supabase.from('crm_meetings').select('*').eq('company_id', companyId) : supabase.from('crm_meetings').select('*').eq('user_id', currentUser.id),
-                supabase.from('crm_companies').select('*').eq('id', companyId).maybeSingle()
-            ]);
-
-            if (usersRes.data) setUsers(usersRes.data.map(u => mapUserFromDB(u)));
-            if (leadsRes.data) setLeads(leadsRes.data.map(mapLeadFromDB));
-            if (meetingsRes.data) setMeetings(meetingsRes.data.map(mapMeetingFromDB));
-            if (companyRes.data?.insights_e_melhorias && companyRes.data.insights_e_melhorias !== companyInsights) {
-                setCompanyInsights(companyRes.data.insights_e_melhorias);
-                setHasNewInsights(true);
-            }
-        } catch (e) {
-            logger.error('Fetch Error', e as Error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [isOnline, currentUser, mapLeadFromDB, mapMeetingFromDB, mapUserFromDB, companyInsights]);
-
-    const refreshData = useCallback(async () => {
-        setIsLoading(true);
-        await fetchData();
-    }, [fetchData]);
-
-    // --- LIFECYCLE EFFECTS ---
-    // 1. Network
     useEffect(() => {
-        const onOnline = () => setIsOnline(true);
-        const onOffline = () => setIsOnline(false);
-        window.addEventListener('online', onOnline);
-        window.addEventListener('offline', onOffline);
-        return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
-    }, []);
-
-    // 2. Initial Auth & Auto-refresh
-    useEffect(() => {
-        const initAuth = async () => {
-            if (!isSupabaseConfigured()) {
-                setCurrentUser(DEFAULT_ADMIN);
-                setIsLoading(false);
-                return;
-            }
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) { setIsLoading(false); return; }
-
-            if (session?.user) {
-                const { data } = await supabase.from('crm_users').select('*').eq('auth_user_id', session.user.id).single();
-                if (data && data.is_active) {
-                    setCurrentUser(mapUserFromDB(data, session.user.email));
-                } else {
-                    await supabase.auth.signOut();
-                }
-            }
-            setIsLoading(false);
-        };
-        initAuth();
-    }, [mapUserFromDB]);
-
-    // 3. Data Sync on User change
-    useEffect(() => {
-        if (currentUser) fetchData();
-    }, [currentUser, fetchData]);
-
-    // 4. Chat History Load on User change
-    useEffect(() => {
-        if (currentUser) loadChatHistory();
-    }, [currentUser, loadChatHistory]);
-
-    // 5. Realtime Subscriptions
-    useEffect(() => {
-        if (!currentUser || !isSupabaseConfigured()) return;
-        const channel = supabase
-            .channel('crm-realtime-sub')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_meetings', filter: `company_id=eq.${currentUser.companyId}` }, (payload) => {
-                const newM = mapMeetingFromDB(payload.new as Record<string, unknown>);
-                setMeetings(prev => prev.find(m => m.id === newM.id) ? prev : [...prev, newM]);
-                sendNewMeetingNotification(newM);
-            })
-            .subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [currentUser, mapMeetingFromDB, sendNewMeetingNotification]);
-
-    // 6. Reminders
-    useEffect(() => {
-        const check = () => {
-            const now = new Date();
-            meetings.forEach(m => {
-                const diffMin = (new Date(m.start.dateTime).getTime() - now.getTime()) / 60000;
-                if (diffMin >= 29.5 && diffMin <= 30.5 && !notifiedEventsRef.current.has(m.id)) {
-                    addToast({ title: 'Lembrete de Reunião', description: `Sua reunião "${m.summary}" começa em 30 min.`, type: 'info' });
-                    saveChatMessage('assistant', `⏰ **Lembrete:** Sua reunião **"${m.summary}"** começa em 30 minutos!`);
-                    notifiedEventsRef.current.add(m.id);
-                }
-            });
-        };
-        const intv = setInterval(check, 60000);
-        check();
-        return () => clearInterval(intv);
-    }, [meetings, addToast, saveChatMessage]);
-
-    // --- CRM ACTIONS ---
-    const signIn = async (email: string, pass: string) => {
-        setIsLoading(true);
-        if (!isSupabaseConfigured()) {
-            await new Promise(r => setTimeout(r, 500));
-            setCurrentUser(DEFAULT_ADMIN);
-            setIsLoading(false);
-            return { success: true };
+        if (currentUser) {
+            loadChatHistory();
         }
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) { setIsLoading(false); return { success: false, error: error.message }; }
-
-        const { data: userData } = await supabase.from('crm_users').select('*').eq('auth_user_id', data.user.id).single();
-        if (userData && userData.is_active) {
-            setCurrentUser(mapUserFromDB(userData, data.user.email || ''));
-            setIsLoading(false);
-            return { success: true };
-        }
-        await supabase.auth.signOut();
-        setIsLoading(false);
-        return { success: false, error: 'Acesso negado ou conta inativa.' };
-    };
-
-    const signOut = async () => {
-        if (isSupabaseConfigured()) await supabase.auth.signOut();
-        setCurrentUser(null);
-    };
-
-    const updateUser = async (u: User) => {
-        setUsers(prev => prev.map(item => item.id === u.id ? u : item));
-        await supabase.from('crm_users').update({ nome: u.name, papel: u.role }).eq('id', u.id);
-    };
-
-    const updateCompanyInsights = async (text: string) => {
-        setCompanyInsights(text);
-        if (currentUser) await supabase.from('crm_companies').update({ insights_e_melhorias: text }).eq('id', currentUser.companyId);
-    };
-
-    const markInsightsAsRead = () => setHasNewInsights(false);
-
-    const addLead = async (l: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => {
-        const { data, error } = await supabase.from('crm_leads').insert(mapLeadToDB(l)).select().single();
-        if (!error && data) setLeads(prev => [mapLeadFromDB(data), ...prev]);
-        addToast({ title: 'Lead Criado', type: 'success' });
-    };
-
-    const updateLead = async (l: Lead) => {
-        setLeads(prev => prev.map(item => item.id === l.id ? l : item));
-        await supabase.from('crm_leads').update({
-            nome: l.name, empresa: l.company, email: l.email, valor: l.value, etapa_pipeline: l.stage, observacoes: l.notes
-        }).eq('id', l.id);
-    };
-
-    const deleteLead = async (id: string) => {
-        setLeads(prev => prev.filter(l => l.id !== id));
-        await supabase.from('crm_leads').delete().eq('id', id);
-    };
-
-    const moveLeadStage = async (id: string, stage: PipelineStage) => {
-        setLeads(prev => prev.map(l => l.id === id ? { ...l, stage } : l));
-        await supabase.from('crm_leads').update({ etapa_pipeline: stage }).eq('id', id);
-    };
-
-    const exportCSV = (filtered: Lead[]) => {
-        const headers = 'Nome,Empresa,Email,Telefone,Valor,Status\n';
-        const rows = filtered.map(l => `"${l.name}","${l.company}","${l.email}","${l.phone}","${l.value}","${l.stage}"`).join('\n');
-        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'leads_crm.csv'; a.click();
-    };
-
-    const addMeeting = async (m: Omit<CalendarEvent, 'id'>) => {
-        if (isSupabaseConfigured()) {
-            const { data, error } = await supabase.from('crm_meetings').insert(mapMeetingToDB(m)).select().single();
-            if (!error && data) setMeetings(prev => [...prev, mapMeetingFromDB(data)]);
-        } else {
-            const mockM = { ...m, id: crypto.randomUUID() } as CalendarEvent;
-            setMeetings(prev => [...prev, mockM]);
-            sendNewMeetingNotification(mockM);
-        }
-        addToast({ title: 'Agendamento Confirmado', type: 'success' });
-    };
-
-    const deleteMeeting = async (id: string) => {
-        await supabase.from('crm_meetings').delete().eq('id', id);
-        setMeetings(prev => prev.filter(m => m.id !== id));
-    };
-
-    const updateMeeting = async (m: CalendarEvent) => {
-        setMeetings(prev => prev.map(item => item.id === m.id ? m : item));
-        await supabase.from('crm_meetings').update({ summary: m.summary, start_time: m.start.dateTime, end_time: m.end.dateTime }).eq('id', m.id);
-    };
+    }, [currentUser]);
 
     return (
         <CRMContext.Provider value={{

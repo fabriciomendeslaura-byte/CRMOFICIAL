@@ -3,12 +3,12 @@ import React, { useState, DragEvent } from 'react';
 import { useCRM } from '../contexts/CRMContext';
 import { PipelineStage, Lead, PipelineStageLabels, LeadSourceLabels, LeadSource } from './types';
 import { Badge, Button, Modal, Input, Select, Textarea } from '../components/UIComponents';
-import { Plus, Edit2, ExternalLink, MessageSquare, Clock, CheckCircle2, XCircle, ArrowRight, Lightbulb, Zap, Calendar, BrainCircuit } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, ExternalLink, MessageSquare, GripVertical, MoreHorizontal, Clock, CheckCircle2, XCircle, ArrowRight, DollarSign, Lightbulb, Zap, Calendar, BrainCircuit } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import LeadActivityTimeline from '../components/LeadActivityTimeline';
 
 const Pipeline: React.FC = () => {
-  const { leads, moveLeadStage, currentUser, users, addLead, updateLead } = useCRM();
+  const { leads, moveLeadStage, currentUser, users, addLead, updateLead, deleteLead } = useCRM();
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -75,7 +75,13 @@ const Pipeline: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  /* Removed duplicate openDetail */
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (window.confirm('Tem certeza que deseja excluir este lead?')) {
+      deleteLead(id);
+    }
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || formData.value === undefined) {
@@ -142,7 +148,7 @@ const Pipeline: React.FC = () => {
       const strategy = await generateLeadStrategy(viewingLead.id);
       setViewingLead({ ...viewingLead, insights: strategy });
       addToast({ title: "Estratégia Gerada", description: "A IA analisou esse lead com sucesso!", type: 'success' });
-    } catch {
+    } catch (error) {
       addToast({ title: "Erro na IA", description: "Não foi possível gerar a estratégia agora.", type: 'error' });
     } finally {
       setIsGeneratingIA(false);

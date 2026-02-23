@@ -19,7 +19,8 @@ interface ErrorBoundaryState {
 // Fix: Use React.Component explicitly and declare state/props properties to ensure visibility for the TypeScript compiler.
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   // Explicitly declaring state and props properties to resolve access errors in some TypeScript environments.
-  /* Removed redundant props/state declarations to fix TS2612 */
+  public state: ErrorBoundaryState;
+  public props: ErrorBoundaryProps;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -28,6 +29,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       hasError: false,
       error: null,
     };
+    // Ensure props are available
+    this.props = props;
   }
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {

@@ -1,18 +1,20 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useCRM } from '../contexts/CRMContext';
 import { Card, Button, Input, Modal, Select, Badge, Textarea } from '../components/UIComponents';
 import {
   Plus, Video, Clock, ChevronLeft, ChevronRight,
   Calendar as CalendarIcon, Zap, Trash2, Edit2,
-  MapPin, CheckCircle2, Globe, Timer, ArrowUpRight
+  MapPin, User, CheckCircle2, Globe, Timer, MoreHorizontal, ArrowUpRight
 } from 'lucide-react';
 import { CalendarEvent } from './types';
+import { useToast } from '../contexts/ToastContext';
 
 type ViewMode = 'month' | 'week';
 
 const Schedule: React.FC = () => {
   const { leads, meetings, addMeeting, updateMeeting, deleteMeeting } = useCRM();
+  const { addToast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [isFormOpen, setIsFormOpen] = useState(false);

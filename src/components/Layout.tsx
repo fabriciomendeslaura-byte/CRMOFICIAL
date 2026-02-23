@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Trello, Users, UserCircle, Settings, BrainCircuit, Sun, Moon, LogOut, Lightbulb, BellRing, Menu, X, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Trello, Users, UserCircle, Settings, BrainCircuit, Sun, Moon, Wifi, WifiOff, LogOut, Lightbulb, BellRing, Menu, X, CalendarDays } from 'lucide-react';
 import { useCRM } from '../contexts/CRMContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AICompanion from './AICompanion';
@@ -21,7 +21,7 @@ const Layout: React.FC = () => {
 
   const handleInsightsClick = () => {
     markInsightsAsRead();
-    navigate('/app/insights');
+    navigate('/insights');
     setIsMobileMenuOpen(false);
   };
 
@@ -33,12 +33,12 @@ const Layout: React.FC = () => {
   const isPipeline = location.pathname === '/pipeline';
 
   const navItems = [
-    { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/app/pipeline', icon: Trello, label: 'Pipeline' },
-    { to: '/app/leads', icon: Users, label: 'Leads' },
-    { to: '/app/schedule', icon: CalendarDays, label: 'Agendamentos' },
-    { to: '/app/insights', icon: Lightbulb, label: 'Insights e Melhorias' },
-    ...(currentUser.role === 'admin' ? [{ to: '/app/admin', icon: Settings, label: 'Admin' }] : []),
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/pipeline', icon: Trello, label: 'Pipeline' },
+    { to: '/leads', icon: Users, label: 'Leads' },
+    { to: '/schedule', icon: CalendarDays, label: 'Agendamentos' },
+    { to: '/insights', icon: Lightbulb, label: 'Insights e Melhorias' },
+    ...(currentUser.role === 'admin' ? [{ to: '/admin', icon: Settings, label: 'Admin' }] : []),
   ];
 
   const getTitle = () => {
@@ -46,6 +46,21 @@ const Layout: React.FC = () => {
     if (path === 'insights') return 'Insights';
     if (path === 'schedule') return 'Agendamentos';
     return path.charAt(0).toUpperCase() + path.slice(1);
+  };
+
+  const sidebarVariants = {
+    expanded: { width: "16rem" }, // 64 = 16rem
+    collapsed: { width: "5rem" },  // 20 = 5rem (md:w-20)
+    mobileOpen: { x: 0, width: "16rem" },
+    mobileClosed: { x: "-100%", width: "16rem" }
+  };
+
+  // Determine current state based on props
+  const getSidebarState = () => {
+    if (window.innerWidth < 768) { // Mobile check (approximate, relying on CSS media queries mostly but needed for variants)
+      return isMobileMenuOpen ? "mobileOpen" : "mobileClosed";
+    }
+    return isPipeline ? "collapsed" : "expanded";
   };
 
   // Simplified logic: We let CSS handle desktop responsive "mode" switch (md:...) but use Motion for smooth width
@@ -156,7 +171,7 @@ const Layout: React.FC = () => {
         {/* Footer / Profile */}
         <div className="p-4 mt-auto border-t border-zinc-200/50 dark:border-white/5 space-y-2 bg-white/30 dark:bg-black/20 backdrop-blur-lg">
           <NavLink
-            to="/app/profile"
+            to="/profile"
             onClick={closeMobileMenu}
             className={({ isActive }) =>
               `flex items-center gap-3 ${isPipeline ? 'md:justify-center md:px-0 md:py-3' : 'px-4 py-3'} rounded-xl transition-all hover:bg-white/50 dark:hover:bg-white/5 ${isActive ? 'bg-white/50 dark:bg-white/10' : ''}`
