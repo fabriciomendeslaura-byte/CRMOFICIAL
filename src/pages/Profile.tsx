@@ -137,7 +137,7 @@ const Profile: React.FC = () => {
       </Card>
 
       <div className="text-center opacity-60 hover:opacity-100 transition-opacity">
-        <p className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">CRM OMNI.IA v2.0</p>
+        <p className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">CRM.OFICIAL v2.0</p>
       </div>
     </div>
   );

@@ -44,8 +44,8 @@ const CRMContext = createContext<CRMContextType | undefined>(undefined);
 const DEFAULT_ADMIN: User = {
     id: 1,
     authUserId: 'admin-preview',
-    name: 'Administrador Omni',
-    email: 'admin@omni.ia',
+    name: 'Administrador Oficial',
+    email: 'admin@oficial.ia',
     role: 'admin' as Role,
     companyId: 1,
     isActive: true
@@ -65,7 +65,7 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
     const [meetings, setMeetings] = useState<CalendarEvent[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [companyInsights, setCompanyInsights] = useState<string>('Bem-vindo ao CRM Omni. Este é o seu painel estratégico.');
+    const [companyInsights, setCompanyInsights] = useState<string>('Bem-vindo ao CRM.OFICIAL. Este é o seu painel estratégico.');
     const [hasNewInsights, setHasNewInsights] = useState<boolean>(false);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isLoadingChat, setIsLoadingChat] = useState(false);
@@ -592,7 +592,7 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (!apiKey) return 'Chave da OpenAI não configurada (VITE_OPENAI_API_KEY).';
 
         try {
-            const prompt = `Consultor de Vendas CRM OMNI.IA.
+            const prompt = `Consultor de Vendas CRM.OFICIAL.
 Analise: ${lead.name} (${lead.company}), R$ ${lead.value}, Etapa ${lead.stage}, Notas: ${lead.notes}.
 Gere JSON curto:
 { "abordagem": "1 frase direta", "objecoes": "2 pontos curtos", "script_whatsapp": "Texto curto para enviar agora" }`;

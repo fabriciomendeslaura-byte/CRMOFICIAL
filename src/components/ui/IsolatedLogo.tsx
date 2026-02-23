@@ -11,7 +11,7 @@ interface IsolatedLogoProps {
 /**
  * IsolatedLogo: A high-performance component that programmatically removes
  * background noise from images via HTML5 Canvas. Precision-engineered for
- * OMNI.IA's high-authority branding.
+ * CRM.OFICIAL's high-authority branding.
  */
 const IsolatedLogo: React.FC<IsolatedLogoProps> = ({
     src,

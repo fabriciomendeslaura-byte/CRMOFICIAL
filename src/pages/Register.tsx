@@ -96,7 +96,7 @@ const Register: React.FC = () => {
             <BrainCircuit className="w-8 h-8 text-white" />
           </motion.div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Crie sua conta no <span className="text-indigo-500">OMNI.IA</span>
+            Crie sua conta no <span className="text-indigo-500">CRM.OFICIAL</span>
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2">
             Transforme sua gestão de leads com inteligência artificial.
@@ -200,7 +200,7 @@ const Register: React.FC = () => {
         </Card>
 
         <p className="text-center text-[10px] text-zinc-400 dark:text-zinc-500 mt-8 px-4 uppercase tracking-widest font-bold">
-          Segurança OMNI.IA &copy; 2026. Todos os direitos reservados.
+          Segurança CRM.OFICIAL &copy; 2026. Todos os direitos reservados.
         </p>
       </motion.div>
     </div>

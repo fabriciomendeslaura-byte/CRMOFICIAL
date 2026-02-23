@@ -43,7 +43,7 @@ const LandingPage: React.FC = () => {
                 >
                     <IsolatedLogo
                         src={logoNew}
-                        alt="OMNI.IA"
+                        alt="CRM.OFICIAL"
                         threshold={45}
                         className="h-20 md:h-24 w-auto drop-shadow-[0_0_15px_rgba(37,99,235,0.3)]"
                     />
@@ -70,7 +70,7 @@ const LandingPage: React.FC = () => {
                 >
                     <h2 className="text-[10px] font-black tracking-[0.5em] uppercase text-blue-500 mb-6 flex items-center justify-center gap-4">
                         <span className="w-8 h-[1px] bg-blue-500/30"></span>
-                        Omni Strategic Intelligence
+                        CRM.OFICIAL Strategic Intelligence
                         <span className="w-8 h-[1px] bg-blue-500/30"></span>
                     </h2>
 
@@ -80,7 +80,7 @@ const LandingPage: React.FC = () => {
                     </h1>
 
                     <p className="max-w-2xl mx-auto text-zinc-400 text-lg md:text-xl font-light leading-relaxed mb-12">
-                        Transforme dados brutos em poder estratégico. O OMNI.IA combina automação avançada com segurança soberana para elevar seu funil de vendas ao nível Titan.
+                        Transforme dados brutos em poder estratégico. O CRM.OFICIAL combina automação avançada com segurança soberana para elevar seu funil de vendas ao nível Titan.
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6">
@@ -142,7 +142,7 @@ const LandingPage: React.FC = () => {
             <footer className="py-20 px-6 container mx-auto flex flex-col items-center">
                 <IsolatedLogo
                     src={logoNew}
-                    alt="OMNI.IA"
+                    alt="CRM.OFICIAL"
                     threshold={45}
                     className="h-32 opacity-20 grayscale mb-8"
                 />

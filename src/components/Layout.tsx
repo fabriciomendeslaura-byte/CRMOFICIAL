@@ -115,7 +115,7 @@ const Layout: React.FC = () => {
                     CRM
                   </h1>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500 text-sm font-bold tracking-widest">
-                    OMNI.IA
+                    OFICIAL
                   </span>
                 </motion.div>
               )}
