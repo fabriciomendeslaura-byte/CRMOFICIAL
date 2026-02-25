@@ -305,6 +305,11 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const initializeAuth = async () => {
             if (!isSupabaseConfigured()) {
                 setCurrentUser(DEFAULT_ADMIN);
+                addToast({
+                    title: 'Modo de Demonstração',
+                    description: 'Sistema operando localmente sem Supabase. As alterações serão salvas apenas nesta sessão.',
+                    type: 'info'
+                });
                 setIsLoading(false);
                 return;
             }

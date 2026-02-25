@@ -17,7 +17,7 @@ const NotFound: React.FC = () => {
            <Compass className="w-12 h-12 text-zinc-400 dark:text-zinc-500" />
         </div>
         
-        <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-zinc-800 to-zinc-400 dark:from-white dark:to-zinc-600 tracking-tighter mb-2">
+        <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-zinc-800 to-zinc-400 dark:from-white dark:to-zinc-600 tracking-normaler mb-2">
           404
         </h1>
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">

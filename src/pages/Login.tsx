@@ -18,7 +18,7 @@ const Login: React.FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (currentUser && !isLoading) {
-      navigate('/dashboard', { replace: true });
+      navigate('/app/dashboard', { replace: true });
     }
   }, [currentUser, isLoading, navigate]);
 
@@ -31,7 +31,7 @@ const Login: React.FC = () => {
 
     if (result.success) {
       addToast({ title: 'Bem-vindo!', type: 'success' });
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     } else {
       setErrorStatus(result.error || 'Erro desconhecido ao fazer login.');
     }
@@ -141,3 +141,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+

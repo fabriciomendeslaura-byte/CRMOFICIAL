@@ -74,7 +74,7 @@ const LandingPage: React.FC = () => {
                         <span className="w-8 h-[1px] bg-blue-500/30"></span>
                     </h2>
 
-                    <h1 className="text-5xl md:text-8xl font-black italic mb-8 leading-[0.9] tracking-tight">
+                    <h1 className="text-5xl md:text-8xl font-black italic mb-8 leading-[0.9] tracking-normal">
                         A NOVA ERA DA <br />
                         <span className="text-gradient">SOBERANIA CRM</span>
                     </h1>
@@ -109,7 +109,7 @@ const LandingPage: React.FC = () => {
                             <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-transform duration-500">
                                 {feature.icon}
                             </div>
-                            <h3 className="text-xl font-bold mb-3 italic tracking-tight">{feature.title}</h3>
+                            <h3 className="text-xl font-bold mb-3 italic tracking-normal">{feature.title}</h3>
                             <p className="text-sm text-zinc-500 leading-relaxed font-light">{feature.description}</p>
                         </motion.div>
                     ))}
@@ -120,19 +120,19 @@ const LandingPage: React.FC = () => {
             <section className="py-20 bg-blue-600/5 border-y border-blue-500/10">
                 <div className="container mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
                     <div>
-                        <div className="text-4xl font-black mb-2 tracking-tighter">99.9%</div>
+                        <div className="text-4xl font-black mb-2 tracking-normaler">99.9%</div>
                         <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Uptime Soberano</div>
                     </div>
                     <div>
-                        <div className="text-4xl font-black mb-2 tracking-tighter">+450%</div>
+                        <div className="text-4xl font-black mb-2 tracking-normaler">+450%</div>
                         <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Conversão Líquida</div>
                     </div>
                     <div>
-                        <div className="text-4xl font-black mb-2 tracking-tighter">ZERO</div>
+                        <div className="text-4xl font-black mb-2 tracking-normaler">ZERO</div>
                         <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Data Leaks</div>
                     </div>
                     <div>
-                        <div className="text-4xl font-black mb-2 tracking-tighter">&lt; 100ms</div>
+                        <div className="text-4xl font-black mb-2 tracking-normaler">&lt; 100ms</div>
                         <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Latência de IA</div>
                     </div>
                 </div>
@@ -155,3 +155,4 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
+

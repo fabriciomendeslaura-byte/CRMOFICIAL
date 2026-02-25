@@ -61,7 +61,7 @@ const Profile: React.FC = () => {
               </button>
             </div>
 
-            <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mt-4 tracking-tight drop-shadow-sm">{currentUser.name}</h3>
+            <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mt-4 tracking-normal drop-shadow-sm">{currentUser.name}</h3>
 
             <div className="flex items-center gap-2 mt-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>

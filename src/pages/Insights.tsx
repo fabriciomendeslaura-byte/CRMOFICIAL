@@ -42,7 +42,7 @@ const Insights: React.FC = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-normal flex items-center gap-3">
             Estratégia & Insights <Sparkles className="w-6 h-6 text-blue-500 animate-pulse" />
           </h2>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">

@@ -34,7 +34,7 @@ const Admin: React.FC = () => {
         <div className="space-y-8">
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Gestão de Usuários</h2>
+                    <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-normal">Gestão de Usuários</h2>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Controle de acesso e equipe.</p>
                 </div>
             </div>
@@ -132,3 +132,4 @@ const Admin: React.FC = () => {
 };
 
 export default Admin;
+

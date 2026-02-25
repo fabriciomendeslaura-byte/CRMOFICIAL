@@ -219,7 +219,7 @@ const Pipeline: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center px-4 py-3 shrink-0 border-b border-white/5 bg-slate-900/10">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white tracking-tight drop-shadow-md">
+          <h2 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white tracking-normal drop-shadow-md">
             Pipeline
           </h2>
         </div>
@@ -466,7 +466,7 @@ const Pipeline: React.FC = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-start bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800">
               <div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">{viewingLead.name}</h2>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-normal">{viewingLead.name}</h2>
                 <p className="text-zinc-500 dark:text-zinc-400 font-medium">{viewingLead.company}</p>
               </div>
               <Badge variant="neutral" className="text-sm px-3 py-1 bg-white dark:bg-zinc-800 shadow-sm">{PipelineStageLabels[viewingLead.stage]}</Badge>
@@ -580,3 +580,4 @@ const Pipeline: React.FC = () => {
 };
 
 export default Pipeline;
+

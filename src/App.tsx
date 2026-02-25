@@ -16,6 +16,8 @@ const Insights = lazy(() => import('./pages/Insights'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Loading spinner for suspense fallback
@@ -52,10 +54,12 @@ const App: React.FC = () => {
             <BrowserRouter>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
                   <Route element={<AccessRoute />}>
-                    <Route path="/" element={<Layout />}>
-                      <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/app" element={<Layout />}>
+                      <Route index element={<Navigate to="/app/dashboard" replace />} />
                       <Route path="dashboard" element={<Dashboard />} />
                       <Route path="pipeline" element={<Pipeline />} />
                       <Route path="leads" element={<Leads />} />

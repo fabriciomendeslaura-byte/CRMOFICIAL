@@ -21,7 +21,7 @@ const Layout: React.FC = () => {
 
   const handleInsightsClick = () => {
     markInsightsAsRead();
-    navigate('/insights');
+    navigate('/app/insights');
     setIsMobileMenuOpen(false);
   };
 
@@ -33,16 +33,16 @@ const Layout: React.FC = () => {
   const isPipeline = location.pathname === '/pipeline';
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/pipeline', icon: Trello, label: 'Pipeline' },
-    { to: '/leads', icon: Users, label: 'Leads' },
-    { to: '/schedule', icon: CalendarDays, label: 'Agendamentos' },
-    { to: '/insights', icon: Lightbulb, label: 'Insights e Melhorias' },
-    ...(currentUser.role === 'admin' ? [{ to: '/admin', icon: Settings, label: 'Admin' }] : []),
+    { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/app/pipeline', icon: Trello, label: 'Pipeline' },
+    { to: '/app/leads', icon: Users, label: 'Leads' },
+    { to: '/app/schedule', icon: CalendarDays, label: 'Agendamentos' },
+    { to: '/app/insights', icon: Lightbulb, label: 'Insights e Melhorias' },
+    ...(currentUser.role === 'admin' ? [{ to: '/app/admin', icon: Settings, label: 'Admin' }] : []),
   ];
 
   const getTitle = () => {
-    const path = location.pathname.substring(1);
+    const path = location.pathname.split('/').pop() || 'Dashboard';
     if (path === 'insights') return 'Insights';
     if (path === 'schedule') return 'Agendamentos';
     return path.charAt(0).toUpperCase() + path.slice(1);

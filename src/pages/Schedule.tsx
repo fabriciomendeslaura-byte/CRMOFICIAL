@@ -177,7 +177,7 @@ const Schedule: React.FC = () => {
             <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-500/30">
               <CalendarIcon className="w-6 h-6" />
             </div>
-            <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-normal">
               Agenda Executiva
             </h2>
           </div>
@@ -201,7 +201,7 @@ const Schedule: React.FC = () => {
           </div>
           <Button
             onClick={() => openCreate(new Date())}
-            className="px-8 !bg-blue-600 hover:!bg-blue-700 text-white rounded-2xl shadow-2xl shadow-blue-600/20 border-0 font-bold tracking-tight gap-2 !bg-none"
+            className="px-8 !bg-blue-600 hover:!bg-blue-700 text-white rounded-2xl shadow-2xl shadow-blue-600/20 border-0 font-bold tracking-normal gap-2 !bg-none"
           >
             <Plus className="w-5 h-5" /> Agendar
           </Button>
@@ -253,7 +253,7 @@ const Schedule: React.FC = () => {
           <div className="p-8 rounded-[2rem] bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-900 text-white shadow-2xl shadow-blue-500/30 relative overflow-hidden group">
             <div className="relative z-10">
               <Timer className="w-10 h-10 mb-6 opacity-80" />
-              <h4 className="text-xl font-black tracking-tight mb-2">Seu tempo é ouro.</h4>
+              <h4 className="text-xl font-black tracking-normal mb-2">Seu tempo é ouro.</h4>
               <p className="text-sm opacity-80 leading-relaxed font-medium">Você tem {todaysMeetingsCount} reuniões marcadas para hoje.</p>
               <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
@@ -270,7 +270,7 @@ const Schedule: React.FC = () => {
             {/* Toolbar Customizada */}
             <div className="p-8 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/20 dark:bg-zinc-800/10">
               <div className="flex items-center gap-6">
-                <h3 className="text-2xl font-black text-zinc-900 dark:text-white capitalize tracking-tighter">{monthLabel}</h3>
+                <h3 className="text-2xl font-black text-zinc-900 dark:text-white capitalize tracking-normaler">{monthLabel}</h3>
                 <div className="flex items-center bg-white dark:bg-zinc-800 rounded-2xl p-1 shadow-sm border border-zinc-100 dark:border-zinc-700">
                   <button onClick={() => handleNavigate('prev')} className="p-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl transition-all text-zinc-600 dark:text-zinc-400"><ChevronLeft className="w-5 h-5" /></button>
                   <button onClick={handleToday} className="px-5 py-1 text-[10px] font-black uppercase tracking-[0.1em] hover:bg-zinc-50 dark:hover:bg-zinc-700 rounded-xl text-blue-600 dark:text-blue-400">Hoje</button>
@@ -307,7 +307,7 @@ const Schedule: React.FC = () => {
                         className={`min-h-[140px] p-4 border-r border-b border-zinc-50 dark:border-zinc-800/50 last:border-r-0 relative group hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-all cursor-pointer ${!item.currentMonth ? 'opacity-20 grayscale' : ''}`}
                       >
                         <div className="flex justify-between items-center mb-3">
-                          <span className={`text-xs font-black tracking-tighter ${isToday ? 'bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-xl shadow-xl shadow-indigo-500/40' : 'text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>
+                          <span className={`text-xs font-black tracking-normaler ${isToday ? 'bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-xl shadow-xl shadow-indigo-500/40' : 'text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>
                             {item.day}
                           </span>
                         </div>
@@ -337,7 +337,7 @@ const Schedule: React.FC = () => {
                     return (
                       <div key={day.toISOString()} className="py-6 text-center border-l border-zinc-100/30 dark:border-zinc-800/30">
                         <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">{weekDayLabels[day.getDay()]}</p>
-                        <p className={`text-xl font-black mt-1 tracking-tighter ${isToday ? 'text-indigo-600 scale-110' : 'text-zinc-900 dark:text-white'}`}>{day.getDate()}</p>
+                        <p className={`text-xl font-black mt-1 tracking-normaler ${isToday ? 'text-indigo-600 scale-110' : 'text-zinc-900 dark:text-white'}`}>{day.getDate()}</p>
                         {isToday && <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full mx-auto mt-2 shadow-[0_0_8px_rgba(99,102,241,0.8)]"></div>}
                       </div>
                     );
@@ -390,7 +390,7 @@ const Schedule: React.FC = () => {
                                   <div className="w-3 h-3 rounded-full bg-blue-600 flex items-center justify-center">
                                     <Video className="w-2 h-2 text-white" />
                                   </div>
-                                  <span className="text-[8px] font-black text-blue-600/80 uppercase tracking-tighter">Meeting</span>
+                                  <span className="text-[8px] font-black text-blue-600/80 uppercase tracking-normaler">Meeting</span>
                                 </div>
                               </div>
                             ))}
@@ -423,7 +423,7 @@ const Schedule: React.FC = () => {
                     <button onClick={() => handleDelete(selectedEvent.id)} className="p-2.5 bg-red-500/20 hover:bg-red-500/40 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <h3 className="text-3xl font-black tracking-tight leading-tight mb-4">{selectedEvent.summary}</h3>
+                <h3 className="text-3xl font-black tracking-normal leading-tight mb-4">{selectedEvent.summary}</h3>
                 <div className="flex items-center gap-4 text-white/90 font-bold text-xs uppercase tracking-widest">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
@@ -485,7 +485,7 @@ const Schedule: React.FC = () => {
                     </div>
                     <div>
                       <span className="font-black text-sm block text-zinc-900 dark:text-white">{getEventForLead(selectedEvent.leadId)?.name}</span>
-                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tight">{getEventForLead(selectedEvent.leadId)?.company}</span>
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-normal">{getEventForLead(selectedEvent.leadId)?.company}</span>
                     </div>
                   </div>
                 </div>
@@ -603,3 +603,4 @@ const Schedule: React.FC = () => {
 };
 
 export default Schedule;
+

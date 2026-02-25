@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">Painel Executivo</h2>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-normal">Painel Executivo</h2>
           <p className="text-zinc-500 text-sm">Visão geral do desempenho comercial.</p>
         </div>
         <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl flex border border-zinc-200 dark:border-zinc-700">
@@ -106,7 +106,7 @@ const Dashboard: React.FC = () => {
               <span className="text-[10px] font-black text-emerald-500 flex items-center gap-0.5 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/10"><ArrowUpRight className="w-3 h-3" /> +12%</span>
             </div>
             <div className="mt-5">
-              <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight leading-none">{kpi.value}</h3>
+              <h3 className="text-3xl font-black text-zinc-900 dark:text-white tracking-normal leading-none">{kpi.value}</h3>
               <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-2">{kpi.label}</p>
             </div>
             {/* Subtle Gradient Line */}
@@ -201,3 +201,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+

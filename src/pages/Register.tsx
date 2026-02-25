@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BrainCircuit, Mail, Lock, User, Building, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -10,6 +10,15 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) navigate('/app/dashboard', { replace: true });
+    };
+    checkAuth();
+  }, [navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -193,7 +202,7 @@ const Register: React.FC = () => {
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Já possui uma conta?{' '}
               <Link to="/login" className="text-indigo-500 font-bold hover:underline">
-                Fazer Login
+                Ir para Login agora
               </Link>
             </p>
           </div>

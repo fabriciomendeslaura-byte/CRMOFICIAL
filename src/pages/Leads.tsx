@@ -132,7 +132,7 @@ const Leads: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
-          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">Leads</h2>
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-normal">Leads</h2>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2">Gerencie sua base de contatos e clientes em potencial.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -466,3 +466,4 @@ const Leads: React.FC = () => {
 };
 
 export default Leads;
+

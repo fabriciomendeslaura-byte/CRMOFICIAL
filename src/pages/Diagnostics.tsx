@@ -47,7 +47,7 @@ const Diagnostics: React.FC = () => {
     return (
         <div className="space-y-6 max-w-4xl mx-auto py-10">
             <div>
-                <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight">Diagnóstico do Sistema</h2>
+                <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-normal">Diagnóstico do Sistema</h2>
                 <p className="text-zinc-500 text-sm">Verificação em tempo real dos componentes críticos para produção.</p>
             </div>
 
@@ -154,3 +154,4 @@ const Diagnostics: React.FC = () => {
 };
 
 export default Diagnostics;
+
