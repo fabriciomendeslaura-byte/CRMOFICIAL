@@ -50,8 +50,8 @@ const Login: React.FC = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-xl shadow-blue-900/20 mb-6 transform hover:scale-105 transition-transform duration-300">
             <BrainCircuit className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
-            CRM <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">OFICIAL</span>
+          <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white leading-tight">
+            CRM <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800" style={{ WebkitBackgroundClip: 'text' }}>OFICIAL</span>
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-3 text-lg">Inteligência Estratégica de Vendas</p>
         </div>

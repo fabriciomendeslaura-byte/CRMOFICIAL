@@ -74,7 +74,7 @@ const LandingPage: React.FC = () => {
                         <span className="w-8 h-[1px] bg-blue-500/30"></span>
                     </h2>
 
-                    <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter mb-8 leading-[0.9]">
+                    <h1 className="text-5xl md:text-8xl font-black italic mb-8 leading-[0.9] tracking-tight">
                         A NOVA ERA DA <br />
                         <span className="text-gradient">SOBERANIA CRM</span>
                     </h1>

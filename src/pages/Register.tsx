@@ -95,7 +95,7 @@ const Register: React.FC = () => {
           >
             <BrainCircuit className="w-8 h-8 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white leading-tight">
             Crie sua conta no <span className="text-indigo-500">CRM.OFICIAL</span>
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2">
