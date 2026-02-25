@@ -4,6 +4,9 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useToast } from './ToastContext';
 import { MOCK_LEADS, MOCK_USERS } from '../constants';
 import { logger } from '../lib/logger';
+import { authService } from '../services/authService';
+import { leadService } from '../services/leadService';
+import { meetingService } from '../services/meetingService';
 
 interface CRMContextType {
     users: User[];
@@ -208,70 +211,42 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         user_id: m.userId || currentUser?.id
     });
 
-    // --- Auth Functions ---
-    const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // --- Actions ---
+    const signIn = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
         setIsLoading(true);
         try {
-            if (!isSupabaseConfigured()) {
-                logger.info('Using mock auth - Supabase not configured');
-                await new Promise(r => setTimeout(r, 500));
-                setCurrentUser(DEFAULT_ADMIN);
-                setIsLoading(false);
-                return { success: true };
-            }
-
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-            if (error) {
-                logger.warn('Sign in failed', { email, error: error.message });
-                setIsLoading(false);
-                return { success: false, error: error.message };
-            }
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+            if (error) throw error;
 
             if (data.user) {
-                // Fetch the user profile from crm_users
-                const { data: userData, error: userError } = await supabase
-                    .from('crm_users')
-                    .select('*')
-                    .eq('auth_user_id', data.user.id)
-                    .single();
-
-                if (userError || !userData) {
-                    logger.error('Access denied - User profile not found', userError as unknown as Error);
-                    await supabase.auth.signOut();
+                const profile = await authService.getCurrentProfile();
+                if (profile) {
+                    const user = mapUserFromDB(profile as any, data.user.email);
+                    setCurrentUser(user);
                     setIsLoading(false);
-                    return { success: false, error: 'Acesso negado: Usuário não cadastrado no CRM.' };
+                    return { success: true };
                 }
-
-                if (!userData.is_active) {
-                    await supabase.auth.signOut();
-                    setIsLoading(false);
-                    return { success: false, error: 'Acesso negado: Sua conta está inativa.' };
-                }
-
-                setCurrentUser(mapUserFromDB(userData, data.user.email));
             }
-
             setIsLoading(false);
-            return { success: true };
-        } catch (e) {
-            const error = e as Error;
-            logger.error('Unexpected error during sign in', error);
+            return { success: false, error: 'Perfil não encontrado.' };
+        } catch (err: any) {
+            logger.error('Sign in error:', err);
             setIsLoading(false);
-            return { success: false, error: 'Erro inesperado ao fazer login.' };
+            return { success: false, error: err.message };
         }
     };
 
     const signOut = async () => {
         setIsLoading(true);
         try {
-            if (isSupabaseConfigured()) {
-                await supabase.auth.signOut();
-            }
+            await authService.signOut();
             setCurrentUser(null);
+            setLeads(MOCK_LEADS);
+            setUsers(MOCK_USERS);
+            setMeetings([]);
             addToast({ title: 'Logout realizado', description: 'Você foi desconectado com sucesso.', type: 'success' });
-        } catch (e) {
-            logger.error('Error during sign out', e as Error);
+        } catch (err) {
+            logger.error('Error during sign out', err as Error);
             addToast({ title: 'Erro ao sair', type: 'error' });
         } finally {
             setIsLoading(false);
@@ -280,78 +255,45 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // --- Data Fetching ---
     const fetchData = useCallback(async () => {
-        if (!isOnline) {
-            logger.info('Offline - using cached/mock data');
-            return;
-        }
+        if (!isOnline) return;
 
         if (!isSupabaseConfigured()) {
-            logger.info('Supabase not configured - using mock data');
             setIsUsingMockData(true);
             setIsLoading(false);
-            // In mock mode, auto-login as admin
             if (!currentUser) setCurrentUser(DEFAULT_ADMIN);
             return;
         }
 
         try {
             if (!currentUser) return;
-
             setIsUsingMockData(false);
-            const isAdmin = currentUser.role === 'admin';
-            const companyId = currentUser.companyId;
 
-            // Filter queries based on company and ownership
-            let usersQuery = supabase.from('crm_users').select('*').eq('company_id', companyId);
-
-            let leadsQuery = supabase.from('crm_leads').select('*').eq('company_id', companyId);
-            if (!isAdmin) {
-                leadsQuery = leadsQuery.eq('responsavel_id', currentUser.id);
-            }
-            leadsQuery = leadsQuery.order('data_criacao', { ascending: false });
-
-            let meetingsQuery = supabase.from('crm_meetings').select('*').eq('company_id', companyId);
-            if (!isAdmin) {
-                meetingsQuery = meetingsQuery.eq('user_id', currentUser.id);
-            }
-            meetingsQuery = meetingsQuery.order('start_time', { ascending: true });
-
-            const [usersResult, leadsResult, meetingsResult, companyResult] = await Promise.allSettled([
-                usersQuery,
-                leadsQuery,
-                meetingsQuery,
-                supabase.from('crm_companies').select('insights_e_melhorias').eq('id', companyId).maybeSingle()
+            const [usersData, leadsData, meetingsData] = await Promise.all([
+                supabase.from('crm_users').select('*').eq('company_id', currentUser.companyId),
+                leadService.getAllLeads(),
+                meetingService.getAllMeetings()
             ]);
 
-            if (usersResult.status === 'fulfilled' && usersResult.value.data) {
-                setUsers(usersResult.value.data.map(u => mapUserFromDB(u)));
-            }
+            if (usersData.data) setUsers(usersData.data.map(u => mapUserFromDB(u)));
+            setLeads((leadsData as any).map((l: any) => mapLeadFromDB(l)));
+            setMeetings((meetingsData as any).map((m: any) => mapMeetingFromDB(m)));
 
-            if (leadsResult.status === 'fulfilled' && leadsResult.value.data) {
-                setLeads(leadsResult.value.data.map(mapLeadFromDB));
-            }
+            const { data: companyData } = await supabase
+                .from('crm_companies')
+                .select('insights_e_melhorias')
+                .eq('id', currentUser.companyId)
+                .maybeSingle();
 
-            if (meetingsResult.status === 'fulfilled' && meetingsResult.value.data) {
-                setMeetings(meetingsResult.value.data.map(mapMeetingFromDB));
+            if (companyData?.insights_e_melhorias) {
+                setCompanyInsights(companyData.insights_e_melhorias);
             }
-
-            if (companyResult.status === 'fulfilled' && companyResult.value.data) {
-                const insights = companyResult.value.data.insights_e_melhorias;
-                if (insights && insights !== companyInsights) {
-                    setCompanyInsights(insights);
-                    setHasNewInsights(true);
-                }
-            }
-
-            logger.debug('Data fetched successfully from Supabase');
         } catch (e) {
-            logger.error('Error fetching data from Supabase', e as Error);
+            logger.error('Error fetching data', e as Error);
             setIsUsingMockData(true);
-            addToast({ title: 'Usando dados de demonstração', description: 'Não foi possível conectar ao banco de dados.', type: 'info' });
         } finally {
             setIsLoading(false);
         }
-    }, [isOnline, companyInsights, addToast, currentUser]);
+    }, [isOnline, currentUser, mapLeadFromDB, mapMeetingFromDB, mapUserFromDB]);
 
     const refreshData = useCallback(async () => {
         setIsLoading(true);
@@ -435,79 +377,76 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
-    const addLead = async (l: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => {
-        const newId = crypto.randomUUID();
-        const newLead: Lead = {
-            ...l,
-            id: newId,
-            createdAt: new Date().toISOString(),
-            companyId: currentUser?.companyId || 1
-        };
-
-        setLeads(prev => [newLead, ...prev]);
-
-        if (isSupabaseConfigured()) {
-            const { error } = await supabase.from('crm_leads').insert(mapLeadToDB(l));
-            if (error) {
-                logger.error('Failed to add lead', error as unknown as Error);
-                addToast({ title: 'Lead criado localmente', description: 'Erro ao sincronizar com o banco.', type: 'info' });
-                return;
-            }
+    const addLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'companyId'>) => {
+        if (isUsingMockData) {
+            const newLead: Lead = {
+                ...leadData,
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+                companyId: currentUser?.companyId || 1
+            };
+            setLeads(prev => [newLead, ...prev]);
+            addToast({ title: 'Lead Criado (Demonstração)', type: 'success' });
+            return;
         }
 
-        addToast({ title: 'Lead Criado', type: 'success' });
+        try {
+            const data = await leadService.createLead(mapLeadToDB(leadData) as any);
+            setLeads(prev => [mapLeadFromDB(data as any), ...prev]);
+            addToast({ title: 'Lead Criado', type: 'success' });
+        } catch (err) {
+            logger.error('Error adding lead:', err);
+            addToast({ title: 'Erro ao criar lead', type: 'error' });
+        }
     };
 
     const updateLead = async (l: Lead) => {
-        setLeads(prev => prev.map(item => item.id === l.id ? l : item));
-
-        if (isSupabaseConfigured()) {
-            const companyId = currentUser?.companyId;
-            const { error } = await supabase.from('crm_leads').update({
-                nome: l.name,
-                empresa: l.company,
-                email: l.email,
-                telefone: l.phone,
-                origem: l.source,
-                valor: l.value,
-                etapa_pipeline: l.stage,
-                responsavel_id: l.ownerId,
-                observacoes: l.notes,
-                insights: l.insights,
-                automation_enabled: l.automationEnabled
-            }).eq('id', l.id).eq('company_id', companyId!);
-
-            if (error) {
-                logger.error('Failed to update lead', error as unknown as Error);
-                addToast({ title: 'Lead atualizado localmente', description: 'Erro ao sincronizar.', type: 'info' });
-                return;
-            }
+        if (isUsingMockData) {
+            setLeads(prev => prev.map(item => item.id === l.id ? l : item));
+            addToast({ title: 'Lead Salvo (Demonstração)', type: 'success' });
+            return;
         }
 
-        addToast({ title: 'Lead Salvo', type: 'success' });
+        try {
+            const data = await leadService.updateLead(l.id, mapLeadToDB(l) as any);
+            setLeads(prev => prev.map(item => item.id === l.id ? mapLeadFromDB(data as any) : item));
+            addToast({ title: 'Lead Salvo', type: 'success' });
+        } catch (err) {
+            logger.error('Failed to update lead', err);
+            addToast({ title: 'Erro ao salvar lead', type: 'error' });
+        }
     };
 
     const deleteLead = async (id: string) => {
-        setLeads(prev => prev.filter(l => l.id !== id));
-
-        if (isSupabaseConfigured()) {
-            const companyId = currentUser?.companyId;
-            const { error } = await supabase.from('crm_leads').delete().eq('id', id).eq('company_id', companyId!);
-            if (error) {
-                logger.error('Failed to delete lead', error as unknown as Error);
-            }
+        if (isUsingMockData) {
+            setLeads(prev => prev.filter(l => l.id !== id));
+            addToast({ title: 'Lead Removido (Demonstração)', type: 'success' });
+            return;
         }
 
-        addToast({ title: 'Lead Removido', type: 'success' });
+        try {
+            await leadService.deleteLead(id);
+            setLeads(prev => prev.filter(l => l.id !== id));
+            addToast({ title: 'Lead Removido', type: 'success' });
+        } catch (err) {
+            logger.error('Failed to delete lead', err);
+            addToast({ title: 'Erro ao remover lead', type: 'error' });
+        }
     };
 
     const moveLeadStage = async (id: string, stage: PipelineStage) => {
-        setLeads(prev => prev.map(l => l.id === id ? { ...l, stage } : l));
+        const lead = leads.find(l => l.id === id);
+        if (!lead) return;
 
-        if (isSupabaseConfigured()) {
-            const companyId = currentUser?.companyId;
-            const { error } = await supabase.from('crm_leads').update({ etapa_pipeline: stage }).eq('id', id).eq('company_id', companyId!);
-            if (error) logger.error('Failed to update lead stage', error as unknown as Error);
+        const updatedLead = { ...lead, stage };
+        setLeads(prev => prev.map(l => l.id === id ? updatedLead : l));
+
+        if (!isUsingMockData) {
+            try {
+                await leadService.updateLead(id, { etapa_pipeline: stage } as any);
+            } catch (err) {
+                logger.error('Failed to update lead stage', err);
+            }
         }
     };
 
@@ -531,57 +470,59 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         window.URL.revokeObjectURL(url);
     };
 
-    const addMeeting = async (m: Omit<CalendarEvent, 'id'>) => {
-        if (isSupabaseConfigured()) {
-            const { data, error } = await supabase.from('crm_meetings').insert(mapMeetingToDB(m)).select().single();
-            if (error) {
-                logger.error('Failed to add meeting', error as unknown as Error);
-                addToast({ title: 'Erro ao agendar no servidor', type: 'error' });
-                return;
-            }
-            if (data) setMeetings(prev => [...prev, mapMeetingFromDB(data)]);
-        } else {
-            const newMeeting = { ...m, id: crypto.randomUUID() };
+    const addMeeting = async (meetingData: Omit<CalendarEvent, 'id'>) => {
+        if (isUsingMockData) {
+            const newMeeting = { ...meetingData, id: crypto.randomUUID() };
             setMeetings(prev => [...prev, newMeeting as CalendarEvent]);
+            addToast({ title: 'Agendamento Confirmado (Demonstração)', type: 'success' });
+            return;
         }
-        addToast({ title: 'Agendamento Confirmado', type: 'success' });
-    };
 
-    const deleteMeeting = async (id: string) => {
-        if (isSupabaseConfigured()) {
-            const companyId = currentUser?.companyId;
-            const { error } = await supabase.from('crm_meetings').delete().eq('id', id).eq('company_id', companyId!);
-            if (error) {
-                logger.error('Failed to delete meeting', error as unknown as Error);
-                return;
-            }
+        try {
+            const data = await meetingService.createMeeting(mapMeetingToDB(meetingData) as any);
+            setMeetings(prev => [...prev, mapMeetingFromDB(data as any)]);
+            addToast({ title: 'Agendamento Confirmado', type: 'success' });
+        } catch (err) {
+            logger.error('Error adding meeting:', err);
+            addToast({ title: 'Erro ao agendar reunião', type: 'error' });
         }
-        setMeetings(prev => prev.filter(m => m.id !== id));
-        addToast({ title: 'Agendamento Removido', type: 'success' });
     };
 
     const updateMeeting = async (m: CalendarEvent) => {
-        setMeetings(prev => prev.map(item => item.id === m.id ? m : item));
-
-        if (isSupabaseConfigured()) {
-            const companyId = currentUser?.companyId;
-            const { error } = await supabase.from('crm_meetings').update({
-                summary: m.summary,
-                description: m.description,
-                location: m.location,
-                start_time: m.start.dateTime,
-                end_time: m.end.dateTime,
-                lead_id: m.leadId ? Number(m.leadId) : null,
-                meeting_link: m.meeting_link
-            }).eq('id', m.id).eq('company_id', companyId!);
-
-            if (error) {
-                logger.error('Failed to update meeting', error as unknown as Error);
-                addToast({ title: 'Erro ao atualizar no servidor', type: 'error' });
-                return;
-            }
+        if (isUsingMockData) {
+            setMeetings(prev => prev.map(item => item.id === m.id ? m : item));
+            addToast({ title: 'Agendamento Atualizado (Demonstração)', type: 'success' });
+            return;
         }
-        addToast({ title: 'Agendamento Atualizado', type: 'success' });
+
+        try {
+            const data = await meetingService.updateMeeting(m.id, mapMeetingToDB(m) as any);
+            setMeetings(prev => prev.map(item => item.id === m.id ? mapMeetingFromDB(data as any) : item));
+            addToast({ title: 'Agendamento Atualizado', type: 'success' });
+        } catch (err) {
+            logger.error('Failed to update meeting', err);
+            addToast({ title: 'Erro ao atualizar reunião', type: 'error' });
+        }
+    };
+
+    const deleteMeeting = async (id: string) => {
+        if (isUsingMockData) {
+            setMeetings(prev => prev.filter(m => m.id !== id));
+            addToast({ title: 'Agendamento Removido (Demonstração)', type: 'success' });
+            return;
+        }
+
+        try {
+            // Need to add deleteMeeting to meetingService if not there, or use direct call for now.
+            // Let's assume meetingService should have it.
+            const { error } = await supabase.from('crm_meetings').delete().eq('id', id);
+            if (error) throw error;
+            setMeetings(prev => prev.filter(m => m.id !== id));
+            addToast({ title: 'Agendamento Removido', type: 'success' });
+        } catch (err) {
+            logger.error('Failed to delete meeting', err);
+            addToast({ title: 'Erro ao remover reunião', type: 'error' });
+        }
     };
 
     const generateLeadStrategy = async (leadId: string): Promise<string> => {
